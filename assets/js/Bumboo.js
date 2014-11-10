@@ -7,12 +7,13 @@ define(['Phaser', 'StartState'], function (Phaser, StartState) {
         Phaser.Game.call(this, 800, 600, Phaser.AUTO, id);
 
         var clearWorld = true,
-            clearCache = true;
+            clearCache = true,
+            autoStart = true;
 
         this.boot();
         this.stage.setBackgroundColor('#3498DB');
 
-        this.state.add('Start', StartState, false);
+        this.state.add('Start', StartState, !autoStart);
         this.state.start('Start', clearWorld, !clearCache);
     }
 
