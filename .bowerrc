@@ -1,0 +1,5 @@
+{
+    "proxy": "http://10.89.104.33:443",
+    "https-proxy": "http://10.89.104.33:443",
+    "directory": "assets/js/libs"
+}
