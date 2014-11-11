@@ -5,7 +5,7 @@
   "authors": [
     "Thanabodee Charoenpiriyakij <wingyminus@gmail.com>"
   ],
-  "description": "Chickrunner on web",
+  "description": "Phaser sample",
   "main": "assets/js/main.js",
   "keywords": [
     "phaser",
