@@ -5,8 +5,6 @@ define(['Phaser'], function (Phaser) {
 
     function Player(game, x, y, name) {
         Phaser.Sprite.call(this, game, x, y, name, 0);
-        game.physics.enable(this, Phaser.ARCADE);
-        game.add.existing(this);
     }
 
     Player.prototype = Object.create(Phaser.Sprite.prototype);

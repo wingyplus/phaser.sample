@@ -15,6 +15,8 @@ define(['Phaser', 'Player'], function (Phaser, Player) {
 
     StartState.prototype.create = function () {
         this.player = new Player(this, this.world.centerX, this.world.centerY, 'player');
+        this.physics.enable(this, Phaser.ARCADE);
+        this.add.existing(this);
     };
 
     StartState.prototype.update = function () {
