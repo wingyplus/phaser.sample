@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	add = make(chan *Client)
+	add  = make(chan *Client)
+	move = make(chan MoveAction)
 )
 
 type Room struct {
@@ -21,36 +22,61 @@ func (r *Room) Add(id string, c *Client) {
 	r.Clients[id] = c
 }
 
-func Broadcast(excludeID string, clients map[string]*Client) {
+func Broadcast(excludeID string, clients map[string]*Client, event string) {
 	for id, c := range clients {
 		if id == excludeID {
 			continue
 		}
 
-		websocket.JSON.Send(c.Ws, Action{
-			Type: "otherCreate",
-			ID:   id,
-			X:    c.Action.X,
-			Y:    c.Action.Y,
-		})
+		switch event {
+		case "otherCreate":
+			websocket.JSON.Send(c.Ws, Action{
+				Type: "otherCreate",
+				ID:   id,
+				X:    c.Position.X,
+				Y:    c.Position.Y,
+			})
+		case "move":
+			websocket.JSON.Send(c.Ws, Action{
+				Type: "move",
+				ID:   id,
+				X:    c.Velocity.X,
+				Y:    c.Velocity.Y,
+			})
+		}
 	}
 }
 
-func (r *Room) Broadcast() {
+func (r *Room) Broadcast(event string) {
 	for uid, _ := range r.Clients {
-		go Broadcast(uid, r.Clients)
+		go Broadcast(uid, r.Clients, event)
 	}
 }
 
 type Action struct {
 	Type string `json:"type"`
+	ID   string `json:"id"`
 	X    int    `json:"x"`
 	Y    int    `json:"y"`
 }
 
+type MoveAction struct {
+	ID       string
+	Velocity Velocity
+}
+
+type Position struct {
+	X, Y int
+}
+
+type Velocity struct {
+	X, Y int
+}
+
 type Client struct {
-	Action Action
-	Ws     *websocket.Conn
+	Position Position
+	Velocity Velocity
+	Ws       *websocket.Conn
 }
 
 func openRoom() {
@@ -62,22 +88,28 @@ func openRoom() {
 		case client := <-add:
 			id := uuid.NewUUID().String()
 			room.Add(id, client)
-			room.Broadcast()
+			go room.Broadcast("otherCreated")
 
 			// generate id to client
 			websocket.JSON.Send(client.Ws, map[string]string{
 				"type": "create",
 				"id":   id,
 			})
+		case action := <-move:
+			room.Clients[action.ID].Velocity = action.Velocity
+			room.Broadcast("move")
 		}
 		log.Println(room)
 	}
 }
 
 func dispatch(ws *websocket.Conn, action Action) {
+	println(action.Type)
 	switch action.Type {
 	case "create":
-		add <- &Client{action, ws}
+		add <- &Client{Position: Position{action.X, action.Y}, Ws: ws}
+	case "move":
+		move <- MoveAction{ID: action.ID, Velocity: Velocity{action.X, action.Y}}
 	}
 }
 
