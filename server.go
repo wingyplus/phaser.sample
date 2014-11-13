@@ -21,17 +21,24 @@ func (r *Room) Add(id string, c *Client) {
 	r.Clients[id] = c
 }
 
-func (r *Room) Broadcast(id string) {
-	for uid, c := range r.Clients {
-		if id == uid {
+func Broadcast(excludeID string, clients map[string]*Client) {
+	for id, c := range clients {
+		if id == excludeID {
 			continue
 		}
 
-		websocket.JSON.Send(c.Ws, map[string]interface{}{
-			"type": "otherCreate",
-			"x":    c.Action.X,
-			"y":    c.Action.Y,
+		websocket.JSON.Send(c.Ws, Action{
+			Type: "otherCreate",
+			ID:   id,
+			X:    c.Action.X,
+			Y:    c.Action.Y,
 		})
+	}
+}
+
+func (r *Room) Broadcast() {
+	for uid, _ := range r.Clients {
+		go Broadcast(uid, r.Clients)
 	}
 }
 
@@ -55,7 +62,7 @@ func openRoom() {
 		case client := <-add:
 			id := uuid.NewUUID().String()
 			room.Add(id, client)
-			room.Broadcast(id)
+			room.Broadcast()
 
 			// generate id to client
 			websocket.JSON.Send(client.Ws, map[string]string{
