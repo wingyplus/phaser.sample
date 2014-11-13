@@ -3,8 +3,9 @@
 define(['Phaser'], function (Phaser) {
     'use strict';
 
-    function Player(game, x, y, name) {
+    function Player(game, id, x, y, name) {
         Phaser.Sprite.call(this, game, x, y, name, 0);
+        this.id = id;
     }
 
     Player.prototype = Object.create(Phaser.Sprite.prototype);
