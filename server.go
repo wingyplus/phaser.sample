@@ -14,6 +14,12 @@ var (
 	move = make(chan MoveAction)
 )
 
+const (
+	OTHER_CREATE = "otherCreate"
+	MOVE         = "move"
+	CREATE       = "create"
+)
+
 type Room struct {
 	Clients map[string]*Client
 }
@@ -29,16 +35,17 @@ func Broadcast(excludeID string, clients map[string]*Client, event string) {
 		}
 
 		switch event {
-		case "otherCreate":
+		case OTHER_CREATE:
+			println("do otherCreate")
 			websocket.JSON.Send(c.Ws, Action{
-				Type: "otherCreate",
+				Type: OTHER_CREATE,
 				ID:   id,
 				X:    c.Position.X,
 				Y:    c.Position.Y,
 			})
-		case "move":
+		case MOVE:
 			websocket.JSON.Send(c.Ws, Action{
-				Type: "move",
+				Type: MOVE,
 				ID:   id,
 				X:    c.Velocity.X,
 				Y:    c.Velocity.Y,
@@ -88,16 +95,16 @@ func openRoom() {
 		case client := <-add:
 			id := uuid.NewUUID().String()
 			room.Add(id, client)
-			go room.Broadcast("otherCreated")
+			go room.Broadcast(OTHER_CREATE)
 
 			// generate id to client
 			websocket.JSON.Send(client.Ws, map[string]string{
-				"type": "create",
+				"type": CREATE,
 				"id":   id,
 			})
 		case action := <-move:
 			room.Clients[action.ID].Velocity = action.Velocity
-			room.Broadcast("move")
+			room.Broadcast(MOVE)
 		}
 		log.Println(room)
 	}
@@ -106,9 +113,9 @@ func openRoom() {
 func dispatch(ws *websocket.Conn, action Action) {
 	println(action.Type)
 	switch action.Type {
-	case "create":
+	case CREATE:
 		add <- &Client{Position: Position{action.X, action.Y}, Ws: ws}
-	case "move":
+	case MOVE:
 		move <- MoveAction{ID: action.ID, Velocity: Velocity{action.X, action.Y}}
 	}
 }
